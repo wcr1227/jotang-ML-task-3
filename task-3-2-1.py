@@ -6,6 +6,7 @@
 
 import numpy as np
 import torch
+from sklearn.datasets import make_moons
 
 np.random.seed(42)
 torch.manual_seed(42)
@@ -14,15 +15,20 @@ torch.manual_seed(42)
 # 1. 数据与参数
 # ============================================================
 # 单样本，2 维特征
-X = np.array([[0.5, -0.3]])   # (1, 2)
-Y = np.array([[1.0]])         # (1, 1)
+X_all, y_all = make_moons(n_samples=100, noise=0.1, random_state=42)
+X = X_all[0:1]   # 取1个样本
+Y = y_all[0:1, None]
 
 n_in, n_h, n_out = 2, 3, 1    # 隐藏层 3 个神经元
 
-W1 = np.random.randn(n_h, n_in) * 0.5    # (3, 2)
-b1 = np.zeros((n_h,))                    # (3,)
+W1 = np.random.randn(n_h, n_in) * 0.5    # (3, 2)   3行（隐藏层神经元），2列（输入特征）
+# W1 是输入层 → 隐藏层的权重矩阵，每一行，代表隐藏层里面一个神经元，和输入2个特征连接的权重
+b1 = np.zeros((n_h,))                    # (3,)   隐藏层3个偏置
+# 隐藏层每一个神经元，单独配一个偏置值
 W2 = np.random.randn(n_out, n_h) * 0.5   # (1, 3)
+# W2 是隐藏层 → 输出层的权重矩阵，这一行，代表输出层那1个神经元，和隐藏层3个神经元连接的权重
 b2 = np.zeros((n_out,))                  # (1,)
+# 输出层就1个神经元，所以只需要1个偏置
 
 print("X :", X.shape, " Y :", Y.shape)
 print("W1:", W1.shape, " b1:", b1.shape)
@@ -31,18 +37,19 @@ print("W2:", W2.shape, " b2:", b2.shape)
 # ============================================================
 # 2. 前向传播 (NumPy)
 # ============================================================
+# 激活函数sigmoid，把实数压缩到0～1，输出概率
 def sigmoid(z):
     return 1.0 / (1.0 + np.exp(-z))
 
-EPS = 1e-12
+EPS = 1e-12 # 防止 log(0)，避免出现负无穷
 
 Z1   = X @ W1.T + b1          # (1,2)@(2,3)+(3,) = (1,3)
 A1   = np.maximum(0, Z1)      # (1,3)  ReLU
 Z2   = A1 @ W2.T + b2         # (1,3)@(3,1)+(1,) = (1,1)
 Yhat = sigmoid(Z2)            # (1,1)
 
-N = X.shape[0]
-L = -np.mean(Y * np.log(Yhat + EPS) + (1 - Y) * np.log(1 - Yhat + EPS))
+N = X.shape[0] 
+L = -np.mean(Y * np.log(Yhat + EPS) + (1 - Y) * np.log(1 - Yhat + EPS)) # 二元交叉熵损失函数
 
 print("\n[NumPy 前向]")
 print("Z1  :", Z1.shape, Z1)
